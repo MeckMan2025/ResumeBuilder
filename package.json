@@ -1,0 +1,14 @@
+{
+  "name": "meckman-resume-builder",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Free resume builder for teens applying for their first job.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}

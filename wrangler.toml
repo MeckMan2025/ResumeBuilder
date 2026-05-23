@@ -1,0 +1,22 @@
+name = "meckman-resume-builder"
+main = "src/worker.js"
+compatibility_date = "2026-02-05"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[ai]
+binding = "AI"
+
+[[unsafe.bindings]]
+name = "POLISH_RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "1001"
+simple = { limit = 30, period = 60 }
+
+# After first `wrangler deploy`, attach the custom domain:
+#   wrangler.toml route or via dashboard → resume.meckman.org
+# [[routes]]
+# pattern = "resume.meckman.org"
+# custom_domain = true

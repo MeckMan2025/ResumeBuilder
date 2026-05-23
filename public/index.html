@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meckman Resume Builder</title>
+    <link rel="stylesheet" href="styles.css">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="Free resume builder for teens applying for their first job. Your data never leaves your browser.">
+</head>
+<body>
+
+<!-- ============================================================
+     Gate: welcome + privacy + AI disclaimer. Blocks app until accepted.
+============================================================ -->
+<div id="gate" class="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title" hidden>
+    <div class="gate-card">
+        <h1 id="gate-title" class="gate-title">Welcome to Meckman Resume Builder</h1>
+        <div class="divider-line"></div>
+
+        <section class="gate-section">
+            <p class="gate-lead">
+                A free tool to help you build your first resume. Made for teens applying
+                for their first job. Walk through the sections &mdash; contact info,
+                school, anything you've done &mdash; and we'll lay it out as a clean,
+                printable resume.
+            </p>
+        </section>
+
+        <section class="gate-section">
+            <h2 class="gate-heading">Privacy</h2>
+            <p>
+                Meckman Resume Builder does not require an account and does not store
+                your resume, contact details, or any other information on our servers.
+                All data is held in your browser's local storage on the device you're
+                using. If you clear your browser data, use a different browser, or
+                switch devices, the information cannot be recovered. To keep a
+                permanent copy of your resume, use your browser's
+                <strong>Print &rarr; Save as PDF</strong> option.
+            </p>
+            <p>
+                The "Help me word this" feature sends only the text you select to our
+                AI provider (Cloudflare Workers AI) for a one-time rewrite. We do not
+                log, retain, or use that text for any other purpose.
+            </p>
+        </section>
+
+        <section class="gate-section">
+            <h2 class="gate-heading">About the AI</h2>
+            <p>
+                The "Help me word this" feature uses AI, and <strong>AI can make
+                mistakes</strong>. Always read what it gives you carefully before
+                adding it to your resume. For something this important, ask a parent,
+                teacher, mentor, school counselor, or a friend who's been through it
+                to look over your finished resume with you. A second pair of eyes
+                catches things you and the AI will miss.
+            </p>
+        </section>
+
+        <div class="divider-line"></div>
+
+        <div class="gate-actions">
+            <button id="gate-accept" class="btn btn-primary" type="button">Accept &amp; Continue</button>
+            <button id="gate-decline" class="btn btn-secondary" type="button">Decline</button>
+        </div>
+        <p class="gate-fineprint">Decline returns you to meckman.org.</p>
+    </div>
+</div>
+
+<!-- ============================================================
+     App shell: editor on the left, live resume preview on the right.
+     The .resume-preview block is the ONLY thing printed.
+============================================================ -->
+<div id="app" class="app" hidden>
+    <header class="app-header no-print">
+        <div class="app-header-inner">
+            <div class="app-brand">
+                <h1 class="app-title">Meckman Resume Builder</h1>
+                <span class="app-tagline">For your first job.</span>
+            </div>
+            <div class="app-actions">
+                <button id="btn-export" class="btn btn-ghost" type="button" title="Download a backup file of your resume data">Export JSON</button>
+                <button id="btn-import" class="btn btn-ghost" type="button" title="Load a previously exported backup">Import JSON</button>
+                <input id="import-file" type="file" accept="application/json" hidden>
+                <button id="btn-reset" class="btn btn-ghost btn-danger" type="button" title="Erase everything and start over">Reset</button>
+                <button id="btn-pdf" class="btn btn-primary" type="button" title="Download your resume as a PDF file">Save as PDF</button>
+                <button id="btn-print" class="btn btn-ghost" type="button" title="Open your browser's print dialog (for paper printing)">Print</button>
+            </div>
+        </div>
+        <div id="save-indicator" class="save-indicator" aria-live="polite">Saved in this browser</div>
+    </header>
+
+    <main class="workbench">
+
+        <!-- ============= EDITOR ============= -->
+        <section class="editor no-print" aria-label="Resume editor">
+
+            <!-- Contact + Objective -->
+            <details class="section" open>
+                <summary><span class="section-title">Contact &amp; Objective</span></summary>
+                <div class="section-body">
+                    <div class="field-grid">
+                        <label class="field"><span>Full name</span>
+                            <input type="text" data-bind="contact.name" placeholder="Alex Johnson">
+                        </label>
+                        <label class="field"><span>Email</span>
+                            <input type="email" data-bind="contact.email" placeholder="alex.j@example.com">
+                        </label>
+                        <label class="field"><span>Phone</span>
+                            <input type="tel" data-bind="contact.phone" placeholder="(555) 555-0123">
+                        </label>
+                        <label class="field"><span>City, State</span>
+                            <input type="text" data-bind="contact.location" placeholder="Cleveland, OH">
+                        </label>
+                    </div>
+                    <label class="field field-block"><span>Objective <em>(1&ndash;2 short sentences about what you're looking for)</em></span>
+                        <textarea data-bind="objective" rows="3" placeholder="Hardworking high school junior looking for a part-time summer job where I can be reliable, learn new skills, and help a team."></textarea>
+                        <button class="btn btn-ghost btn-ai" type="button" data-polish="objective">Help me word this</button>
+                    </label>
+                </div>
+            </details>
+
+            <!-- Education -->
+            <details class="section" open>
+                <summary><span class="section-title">Education</span></summary>
+                <div class="section-body">
+                    <div id="list-education" class="list"></div>
+                    <button class="btn btn-add" type="button" data-add="education">+ Add school</button>
+                </div>
+            </details>
+
+            <!-- Work Experience -->
+            <details class="section">
+                <summary><span class="section-title">Work Experience <em>(skip if you don't have any &mdash; that's fine!)</em></span></summary>
+                <div class="section-body">
+                    <div id="list-work" class="list"></div>
+                    <button class="btn btn-add" type="button" data-add="work">+ Add job</button>
+                </div>
+            </details>
+
+            <!-- Activities / Volunteering / Projects -->
+            <details class="section" open>
+                <summary><span class="section-title">Activities, Volunteering &amp; Projects</span></summary>
+                <div class="section-body">
+                    <p class="section-help">Clubs, sports, volunteer work, personal projects, anything you've done. This is often more important than work experience for first-time job seekers.</p>
+                    <div id="list-activities" class="list"></div>
+                    <button class="btn btn-add" type="button" data-add="activities">+ Add activity</button>
+                </div>
+            </details>
+
+            <!-- Skills -->
+            <details class="section">
+                <summary><span class="section-title">Skills</span></summary>
+                <div class="section-body">
+                    <p class="section-help">Things you're good at. Could be software (Google Docs, Excel), languages (Spanish &mdash; conversational), or real-world stuff (CPR certified, customer service, mowing).</p>
+                    <div id="list-skills" class="list"></div>
+                    <button class="btn btn-add" type="button" data-add="skills">+ Add skill</button>
+                </div>
+            </details>
+
+            <!-- Awards -->
+            <details class="section">
+                <summary><span class="section-title">Awards &amp; Honors</span></summary>
+                <div class="section-body">
+                    <div id="list-awards" class="list"></div>
+                    <button class="btn btn-add" type="button" data-add="awards">+ Add award</button>
+                </div>
+            </details>
+
+        </section>
+
+        <!-- ============= LIVE PREVIEW ============= -->
+        <aside class="preview-pane" aria-label="Resume preview">
+            <div class="preview-label no-print">Live preview</div>
+            <div class="preview-scroll">
+                <article id="resume-preview" class="resume-preview" aria-live="polite"></article>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- This element is also used for printing &mdash; same DOM, print stylesheet hides everything else. -->
+    <div id="print-mount" class="print-only" aria-hidden="true"></div>
+
+    <footer class="app-footer no-print">
+        <p>
+            Your resume lives only in this browser. <strong>Print &rarr; Save as PDF</strong> before you leave to keep a copy.
+            <a href="#" id="show-privacy">Privacy &amp; AI notice</a>
+        </p>
+    </footer>
+</div>
+
+<!-- Toast for AI errors / status -->
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>
