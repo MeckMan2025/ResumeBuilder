@@ -15,8 +15,6 @@ type = "ratelimit"
 namespace_id = "1001"
 simple = { limit = 30, period = 60 }
 
-# After first `wrangler deploy`, attach the custom domain:
-#   wrangler.toml route or via dashboard → resume.meckman.org
-# [[routes]]
-# pattern = "resume.meckman.org"
-# custom_domain = true
+[[routes]]
+pattern = "resume.meckman.org"
+custom_domain = true
